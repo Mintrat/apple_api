@@ -2,8 +2,6 @@
 ini_set('max_execution_time', 0);
 include './functions.php';
 
-$microtime = microtime();
-
 $url = 'https://itunes.apple.com/search';
 $query = '?limit=200&term=';
 $top = getTop('./top.json');
@@ -29,7 +27,7 @@ foreach ($songs as $song) {
     }
 }
 
-// ищит id артиста и его top
+// ищет id артиста и его top
 foreach ($artists as $name => $dataArtist) {
     $requestURL = $url . $query . str_replace(' ', '+', $name);
     $resultRequest = json_decode(file_get_contents($requestURL), true);
