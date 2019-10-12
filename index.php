@@ -1,43 +1,13 @@
 <?php
-ini_set('max_execution_time', 0);
+require './vendor/autoload.php';
 include './functions.php';
 
-$url = 'https://itunes.apple.com/search';
-$query = '?limit=200&term=';
-$top = getTop('./top.json');
-$songs = getSongs($top);
-$artists = [];
+use App\ITunesTop;
+use GuzzleHttp\Client;
 
-foreach ($songs as $song) {
-    $artistName = $song['attributes']['artistName'];
-    
-    // если в записе трека учавствовало несколько артистов, разбиваем их
-    if (strpos($artistName, ',') !== false) {
-        $compoundName = explode(',', $artistName);
-    }
+ini_set('max_execution_time', 0);
 
-    // если несколько артистов учавствовали в записи трека, записываем каждого отдельно в массив $artists
-    if (!empty($compoundName)) {
-        foreach ($compoundName as $name) {
-            writeInArtists($artists, $name, (int) $song['id']);
-        }
-        unset($compoundName);
-    } else {
-        writeInArtists($artists, $artistName, (int) $song['id']);
-    }
+$itunes = new ITunesTop(new GuzzleHttp\Client());
+foreach (getTop('./top.json')['results']['songs'][0]['data'] as $song) {
+    show($itunes->getTopArtistBySongIdArtName((int) $song['id'], $song['attributes']['artistName']));
 }
-
-// ищет id артиста и его top
-foreach ($artists as $name => $dataArtist) {
-    $requestURL = $url . $query . str_replace(' ', '+', $name);
-    $resultRequest = json_decode(file_get_contents($requestURL), true);
-    $artistId = getArtistId($resultRequest, $dataArtist['idsSongs']);
-    $artists[$name]['artistId'] = $artistId;
-    if ($artistId) {
-        // у функции getTopArtistById второй параметер $limit равен 5 
-        $artists[$name]['top'] = getTopArtistById($artistId);
-    }
-    unset($requestURL);
-}
-
-show($artists);
