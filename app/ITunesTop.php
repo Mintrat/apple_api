@@ -3,46 +3,56 @@ namespace App;
 
 class ITunesTop 
 {
-    private $ghc;
-    private $urlSearch = 'https://itunes.apple.com/search';
-    private $querySearch = '?limit=200&term=';
-
+    private $http;
+    private $urlSearch = 'https://api.music.apple.com/v1/catalog/us/songs/{id}';
     private $urlLookup = 'https://itunes.apple.com/lookup';
-    private $queryLookup = '?limit=200&entity=song&id=';
+    private $queryLookup = ['entity' => 'song', 'id' => ''];
 
-    public function __construct(\GuzzleHttp\Client $ghc)
+    public function __construct(\GuzzleHttp\Client $http)
     {
-        $this->ghc = $ghc;
+        $this->http = $http;
     }
 
-    public function getTopArtistBySongIdArtName(int $idSong, String $artistName): array
+    public function getTopArtistBySongIdArtName(int $songId, String $artistName): array
     {
-        $searchList = $this->searchArtitsts($artistName);
-        $artistId = $this->getArtistIdBySongId($searchList, $idSong);
-        return getTopArtistById($artistId);
-    }
+        $artistId = $this->getArtistIdBySongId($songId);
 
-    private function searchArtitsts(String $artistName): array
-    {
-        $query = $this->urlSearch . $this->querySearch . $artistName;
-        $response = $this->ghc->request('GET', $query);
-        return json_decode($response->getBody(), true);
-    }
-
-    private function getArtistIdBySongId(array $searchList, int $songId): int
-    {
-        foreach ($searchList['results'] as $song) {
-            if (in_array($songId, $song)) {
-                return $song['artistId'];
-            }
+        if ($artistId !== false) {
+            $topArtist = $this->getTopArtistById($artistId);
+            return $topArtist ? $topArtist : false;
         }
-        return 0;
+
+        return false;
     }
 
-    private function getTopArtistById(int $artistId): array
+    private function searchArtitstBySongId(int $idSong)
     {
-        $query = $this->urlLookup . $this->queryLookup . $artistId;
-        $response = $this->ghc->request('GET', $query);
-        return json_decode($response, true);
+        $query = str_replace('{id}', $idSong, $this->urlSearch);
+        $response = $this->http->request('GET', $query);
+        $jsonObj =  json_decode($response->getBody());
+
+        if (!empty($jsonObj->data)) {
+            return $jsonObj->data[0]->relationships->artists->data[0]->id;
+        }
+
+        return false;
+    }
+
+    private function getTopArtistById(int $artistId)
+    {
+        $queryLoop = $this->queryLookup;
+        $queryLoop['id'] = $artistId;
+        $query = $this->urlLookup . '?' . http_build_query($queryLoop);
+        $response = $this->http->request('GET', $query);
+        $jsonObj = json_decode($response, true);
+
+        if ($jsonObj) {
+            $topArtist = [];
+            for ($i = 1, $countSongs = $jsonObj->resultCount; $i < $countSongs; ++$i) {
+                $topArtist[] = $jsonObj->results[$i]->trackId;
+            }
+            return $topArtist;
+        }
+        return false;
     }
 }
