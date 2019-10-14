@@ -9,5 +9,5 @@ ini_set('max_execution_time', 0);
 
 $itunes = new ITunesTop(new GuzzleHttp\Client());
 foreach (getTop('./top.json')['results']['songs'][0]['data'] as $song) {
-    show($itunes->getTopArtistBySongIdArtName((int) $song['id'], $song['attributes']['artistName']));
+    show($itunes->getTopArtistBySongId((int) $song['id']));
 }

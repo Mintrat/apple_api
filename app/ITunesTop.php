@@ -13,7 +13,7 @@ class ITunesTop
         $this->http = $http;
     }
 
-    public function getTopArtistBySongIdArtName(int $songId, String $artistName): array
+    public function getTopArtistBySongId(int $songId, String $artistName): array
     {
         $artistId = $this->getArtistIdBySongId($songId);
 
