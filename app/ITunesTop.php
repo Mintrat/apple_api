@@ -5,15 +5,21 @@ class ITunesTop
 {
     private $http;
     private $urlSearch = 'https://api.music.apple.com/v1/catalog/us/songs/{id}';
+    private $searchHeaders = ['Authorization' => 'someToken'];
     private $urlLookup = 'https://itunes.apple.com/lookup';
     private $queryLookup = ['entity' => 'song', 'amgArtistId' => ''];
-
+/**
+ * @param \GuzzleHttp\Client $http
+ */
     public function __construct(\GuzzleHttp\Client $http)
     {
         $this->http = $http;
     }
-
-    public function getTopArtistBySongId(int $songId, String $artistName): array
+/**
+ *  @param int $songId
+ *  @return array Return array with top artists by song id or false
+ */
+    public function getTopArtistBySongId(int $songId)
     {
         $artistsIds = $this->getArtistIdBySongId($songId);
 
@@ -21,35 +27,42 @@ class ITunesTop
             $topArtists = [];
 
             foreach ($artistsIds as $artistId) {
-                $topArtists[$artistId] = $this->getTopArtistById($artistId)                
+                $topArtists[$artistId] = $this->getTopArtistById($artistId);
             }
-
-            $topArtist = $this->getTopArtistById($artistId);
+            
             return $topArtists;
         }
 
         return false;
     }
-
-    public function getArtistIdBySongId(int $idSong)
+    
+    /**
+    *  @param int $songId
+    *  @return array Return array with artists ids or false
+    */
+    public function getArtistIdBySongId(int $songId)
     {
-        $query = str_replace('{id}', $idSong, $this->urlSearch);
-        $response = $this->http->request('GET', $query);
+        $query = str_replace('{id}', $songId, $this->urlSearch);
+        $response = $this->http->request('GET', $query, ['headers' => $this->searchHeaders]);
         $jsonObj =  json_decode($response->getBody());
 
         if (!empty($jsonObj->data)) {
             $artists = $jsonObj->data[0]->relationships->artists->data;
-            $idArtists = [];
-
-            for ($i = 0, $countAtrists = count($artists); $i < $countAtrists; ++$i) {
-                $idArtists[] = $artists[$i]->id;
-            }
+            
+            $idArtists = array_map(function($artist) {
+                return $artist->id;
+            }, $artists);
+            
             return $idArtists;
         }
 
         return false;
     }
-
+    /**
+     * 
+     * @param int $artistId
+     * @return array Return array with top artists
+     */
     public function getTopArtistById(int $artistId)
     {
         $queryLoop = $this->queryLookup;
