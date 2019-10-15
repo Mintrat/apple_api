@@ -25,7 +25,7 @@ class ITunesTop
         return false;
     }
 
-    private function searchArtitstBySongId(int $idSong)
+    private function getArtistIdBySongId(int $idSong)
     {
         $query = str_replace('{id}', $idSong, $this->urlSearch);
         $response = $this->http->request('GET', $query);
