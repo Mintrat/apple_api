@@ -14,9 +14,12 @@ class Artist
     {
         if ($data) {
             $params = static::parseData($data);
-            return $params ? new static($params, false) : static::getInstanceError();
-        }
 
+            if ($params) {
+                return new static($params, false);
+            }
+            return static::getInstanceError();
+        }
         return static::getInstanceError();
     }
 
@@ -26,21 +29,14 @@ class Artist
  */
 private static function parseData(String $data)
 {
-    $error = false;
     $dataJsone = json_decode($data);
 
-    if ($dataJsone && $dataJsone->resultCount > 1) {
-        $params = ['artist' => [], 'top' => []];
+    if ($dataJsone && $dataJsone->resultCount) {
+        $params = [];
 
-        $params['artist']['id'] = $dataJsone->results[0]->artistId;
-        $params['artist']['amgArtistId'] = $dataJsone->results[0]->amgArtistId;
-        $params['artist']['name'] = $dataJsone->results[0]->artistName;
-
-        for ($i = 1, $count = $dataJsone->resultCount; $i < $count; ++$i) {
-            $song['id'] = $dataJsone->results[$i]->trackId;
-            $song['title'] = $dataJsone->results[$i]->trackName;
-            $params['top'] = $song;
-        }
+        $params['id'] = $dataJsone->results[0]->artistId;
+        $params['amgArtistId'] = $dataJsone->results[0]->amgArtistId;
+        $params['name'] = $dataJsone->results[0]->artistName;
 
         return $params;
 
@@ -63,34 +59,39 @@ private static function parseData(String $data)
         }
     }
 
-    function setParams($params)
+    public function setParams($params)
     {
         foreach ($params as $key => $val) {
             $this->$key = $val;
         }
     }
 
-    function getId()
+    public function setTop(\App\Top $top)
+    {
+        $this->top = $top;
+    }
+
+    public function getId()
     {
         return $this->id;
     }
 
-    function getAmgArtistId()
+    public function getAmgArtistId()
     {
         return $this->amgArtistId;
     }
 
-    function getName()
+    public function getName()
     {
         return $this->name;
     }
     
-    function getTop()
+    public function getTop()
     {
         return $this->top;
     }
 
-    function hasError()
+    public function hasError()
     {
         return $this->error;
     }

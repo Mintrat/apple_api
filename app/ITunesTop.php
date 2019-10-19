@@ -1,89 +1,132 @@
 <?php
 namespace App;
+
 class ITunesTop 
 {
     private $http;
-    private $urlSearch = 'https://api.music.apple.com/v1/catalog/{storefront}/songs/{id}';
-    private $searchHeaders = ['Authorization' => 'someToken'];
-    private $urlLookup = 'https://itunes.apple.com/lookup';
-    private $queryLookup = ['entity' => 'song', 'id' => ''];
+    private $urlApppleMusic = 'https://api.music.apple.com/v1/catalog/{storefront}/songs/{id}';
+    private $headerAppleMusic =  ['headers' => []];
+    private $urlITunes = 'https://itunes.apple.com/lookup';
+    private $queryITunesTop = ['entity' => 'song', 'amgArtistId' => ''];
 /**
  * @param \GuzzleHttp\Client $http
  * @param String $token the apple token for authorization
  */
-    public function __construct(\GuzzleHttp\Client $http, String $token)
+    public function __construct(\GuzzleHttp\Client $http)
     {
         $this->http = $http;
-        $this->searchHeaders['Authorization'] = $token;
+    }
+/**
+ * @param int $songId
+ * @param String $storefront An iTunes Store territory, specified by an ISO 3166 alpha-2 country code 
+ * possible values: https://help.apple.com/itc/musicspec/?lang=en#/itc740f60829 
+ */
+    public function getArtistBySongId(int $songId, String $storefront)
+    {
+        $song = getSongById($songId, $storefront);
+
+        if ($song->hasError()) {
+            return false;
+        }
+        $artists = [];
+        foreach ($song->getArtistsIds() as $id) {
+            $artist = $this->getArtistById($id);
+
+            if (!$artist->hasError()) {
+                $artists[] = $artist;
+            }
+        }
+
+        return $artists;
     }
 
 /**
- *  @param int $songId
- *  @param Boolean $rawData if value is true method return raw response
- *  @return array Return array with top artists by song id or false
+ * @param int $songId
+ * @param String $storefront An iTunes Store territory, specified by an ISO 3166 alpha-2 country code 
+ * possible values: https://help.apple.com/itc/musicspec/?lang=en#/itc740f60829 
  */
-    public function getTopArtistBySongId(int $songId, $rawData = false)
+    public function getSongById(int $songId, String $storefront, $rawData = false)
     {
-        $artistsIds = $this->getArtistIdBySongId($songId);
-        if ($artistsIds !== false) {
-            $topArtists = [];
-            foreach ($artistsIds as $artistId) {
-                $topArtists[$artistId] = $this->getTopArtistById($artistId);
+        $url = str_replace('{storefront}', $storefront, $this->urlApppleMusic);
+        $url = str_replace('{id}', $songId, $url);
+
+        try {
+            $res = $http->request('GET', $url, $this->headerAppleMusic);
+            $body = $res->getBody();
+            if ($rawData) {
+                return $body->getContents();
             }
-            
-            return $topArtists;
+            return Song::getInstance($body->getContents());
+        } catch (Exceptio $e) {
+            if ($rawData) {
+                return false;
+            }
+            return App\Song::getInstanceError();
         }
-        return false;
     }
-    
-    /**
-    *  @param int $songId
-    *  @param Boolean $rawData if value is true method return raw response
-    *  @return array Return array with artists ids or false. If result is not seccesseful, will be throw an exception  
-    */
-    public function getArtistIdBySongId(int $songId, $rawData = false)
+
+/**
+ * @param int $artistId
+ * @param boolean if is value is true method return raw data
+ * @return App\Artist or string, or false 
+ */
+    public function getArtistById(int $artistId, $rawData = false)
     {
         try {
-            $query = str_replace('{id}', $songId, $this->urlSearch);
-            $response = $this->http->request('GET', $query, ['headers' => $this->searchHeaders]);
-            $jsonObj =  json_decode($response->getBody());
-            if (!empty($jsonObj->data)) {
-                $artists = $jsonObj->data[0]->relationships->artists->data;
-                
-                $idArtists = array_map(function($artist) {
-                    return $artist->id;
-                }, $artists);
-                
-                return $idArtists;
+            $res = $this->http->request('GET', $this->urlITunes, ['query' => ['id' => $artistId]]);
+            $body = $res->getBody();
+
+            if ($rawData) {
+                return $body->getContents();
             }
-            return false;
-        } catch (Excepton $e) {
+           $artist = Artist::getInstance($body->getContents());
+           $top = $this->getTopArtistByAmgIdArtist($artist->getAmgArtistId());
+            if ($top) {
+                $artist->setTop($top);
+            }
+            return $artist;
+
+        } catch (Exception $e) {
+            if ($rawData) {
+                return false;
+            }
+            return App\Artist::getInstanceError();
+        }
+    }
+
+/**
+ * @param int $amgArtistId All Music Guide (AMG) https://affiliate.itunes.apple.com/resources/documentation/itunes-store-web-service-search-api/
+ */
+    public function getTopArtistByAmgIdArtist(int $amgArtistId, $rawData = false)
+    {
+        $query = $this->queryITunesTop;
+        $query['amgArtistId'] = $amgArtistId;
+        try {
+            $res = $this->http->request('GET', $this->urlITunes, ['query' => $query]);
+            $body = $res->getBody();
+
+            if ($rawData) {
+                return $body->getContents();
+            }
+
+            return Top::getInstanceList($body->getContents());
+        } catch (Exception $e) {
             return false;
         }
     }
 
-    /**
-     * @param int $artistId
-     * @return array Return array with top artists. If result is not seccesseful, will be throw an exception
-     */
-    public function getTopArtistById(int $artistId)
+    public function setQueryITunesTop($key, $val)
     {
-        try {
-            $queryLoop = $this->queryLookup;
-            $queryLoop['id'] = $artistId;
-            $response = $this->http->request('GET', $this->urlLookup, ['query' => $queryLoop]);
-            $jsonObj = json_decode($response, true);
-            if ($jsonObj) {
-                $topArtist = [];
-                for ($i = 1, $countSongs = $jsonObj->resultCount; $i < $countSongs; ++$i) {
-                    $topArtist[] = $jsonObj->results[$i]->trackId;
-                }
-                return $topArtist;
-            }
-            return false;
-            
-        } catch (Excepton $e){
-            return false;
-        }
+        $this->queryITunesTop[$key] = $val;
+    }
+
+/**
+ * @param String $key
+ * @param String key
+ * setting headers for request apple music
+ */
+    public function setHeaderAppleMusic(String $key, String $value)
+    {
+        $this->headerAppleMusic['headers'][$key] = $value;
     }
 }
