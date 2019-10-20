@@ -4,6 +4,8 @@ namespace App;
 
 class Top
 {
+    private $top;
+
     static public function getInstanceList(String $data)
     {
         $listOfSongs = [];
@@ -12,7 +14,7 @@ class Top
 
         if ($resultCount) {
             for ($i = 1; $i < $resultCount; ++$i) {
-                $song = SongTop::getInstance($dataJsone->results[$i]);
+                $song = ITunesSong::getInstance($dataJsone->results[$i]);
 
                 if ($song) {
                     $listOfSongs[] = $song;
@@ -25,7 +27,7 @@ class Top
         }
     }
 
-    public function __construct($top)
+    private function __construct($top)
     {
         $this->top = $top;
     }

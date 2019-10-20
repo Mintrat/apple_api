@@ -2,32 +2,32 @@
 
 namespace App;
 
-class Song
+class AppleMusicSongDTO
 {
     private $error;
     private $id;
     private $title;
-    private $aristsIds;
+    private $artistsIds;
 
     /**
      * @param String $data parameters of song
-     * @return App\Song 
+     * @return AppleMusicSongDTO
      */
-    
-    static function getInstance(String $data)
+
+    public static function getInstance(String $data)
     {
         if ($data) {
             $params = static::parseData($data);
-            return $params ? new static($params, false) : static::getInstanceError();
+            return $params ? new static($params) : static::getInstanceError();
         }
 
         return static::getInstanceError();
     }
 
-/**
- * @param Strring $data 
- * @return array parameters for create object or false
- */
+    /**
+     * @param String $data
+     * @return array|boolean parameters for create object or false
+     */
     private static function parseData(String $data)
     {
         $error = false;
@@ -41,7 +41,7 @@ class Song
             $params['artistsIds'] = [];
 
             foreach ($dataJsone->data[0]->relationships->artists->data as $artist) {
-                $params['artistsIds'][] = (int) $artist->id;
+                $params['artistsIds'][] = (int)$artist->id;
             }
 
             foreach ($params as $param) {
@@ -58,49 +58,57 @@ class Song
         }
     }
 
-/**
- * @return App\Song with error
- */
-    static function getInstanceError()
+    /**
+     * @return AppleMusicSongDTO with error
+     */
+    public static function getInstanceError()
     {
-        return new static('');
+        return new static('', true);
     }
 
-
-    private function __construct($params, $error = true)
+    /**
+     * AppleMusicSongDTO constructor.
+     * @param $params
+     * @param bool $error
+     */
+    private function __construct($params, $error = false)
     {
         $this->error = $error;
         if (!$error) {
-            $this->setParams($params);
-        }
-    }
-/**
- * @param array $params 
- * set property of this object
- */
-    private function setParams($params)
-    {
-        foreach ($params as $key => $val) {
-            $this->$key = $val;
+            $this->title = $params['title'];
+            $this->id = $params['id'];
+            $this->artistsIds = $params['artistsIds'];
         }
     }
 
-    function getArtistsIds()
+    /**
+     * @return array
+     */
+    public function getArtistsIds()
     {
         return $this->artistsIds;
     }
 
-    function getId()
+    /**
+     * @return int
+     */
+    public function getId()
     {
-        return (int) $this->id;
+        return (int)$this->id;
     }
 
-    function getTitle()
+    /**
+     * @return String
+     */
+    public function getTitle()
     {
         return $this->title;
     }
 
-    function hasError()
+    /**
+     * @return bool
+     */
+    public function hasError()
     {
         return $this->error;
     }

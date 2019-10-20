@@ -2,10 +2,10 @@
 require './vendor/autoload.php';
 
 use App\ITunesTop;
-use App\Artist;
-use App\Song;
+use App\ArtistDTO;
+use App\AppleMusicSongDTO;
 use App\Top;
-use App\SongTop;
+use App\ITunesSong;
 use GuzzleHttp\Client;
 
 $itunes = new ITunesTop(new GuzzleHttp\Client());
