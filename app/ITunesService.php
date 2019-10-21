@@ -4,7 +4,7 @@ namespace App;
 
 use GuzzleHttp\Exception\GuzzleException;
 
-class ITunesTop
+class ITunesService
 {
     private $http;
     private $urlAppleMusic = 'https://api.music.apple.com/v1/catalog/%s/songs/%d';
@@ -111,12 +111,12 @@ class ITunesTop
 
     /**
      * @param int $amgArtistId All Music Guide (AMG) https://affiliate.itunes.apple.com/resources/documentation/itunes-store-web-service-search-api/
-     * @return Top|bool
+     * @return TopDTO|bool
      */
     public function getTopArtistByAmgIdArtist(int $amgArtistId)
     {
         $rawData = $this->getTopArtistByAmgIdArtistRaw($amgArtistId);
-        return Top::getInstanceList($rawData);
+        return TopDTO::getInstanceList($rawData);
     }
 
     /**

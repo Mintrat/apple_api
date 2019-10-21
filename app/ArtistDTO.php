@@ -17,32 +17,29 @@ class ArtistDTO
     public static function getInstance(String $data)
     {
         if ($data) {
-            $params = static::parseData($data);
-
-            if ($params) {
-                return new static($params);
-            }
-            return static::getInstanceError();
+            $artist = static::parseData($data);
         }
-        return static::getInstanceError();
+        if (!$artist) {
+            $artist = static::getInstanceError();
+        }
+        return $artist;
     }
 
     /**
      * @param String $data
-     * @return array|boolean parameters for create object or false
+     * @return ArtistDTO|boolean parameters for create object or false
      */
     private static function parseData(String $data)
     {
         $dataJsone = json_decode($data);
 
         if ($dataJsone && $dataJsone->resultCount) {
-            $params = [];
 
-            $params['id'] = $dataJsone->results[0]->artistId;
-            $params['amgArtistId'] = $dataJsone->results[0]->amgArtistId;
-            $params['name'] = $dataJsone->results[0]->artistName;
+            $id = $dataJsone->results[0]->artistId;
+            $amgArtistId = $dataJsone->results[0]->amgArtistId;
+            $name = $dataJsone->results[0]->artistName;
 
-            return $params;
+            return new static($id, $amgArtistId, $name);
 
         } else {
             return false;
@@ -54,30 +51,31 @@ class ArtistDTO
      */
     public static function getInstanceError()
     {
-        return new static('', true);
+        return new static(null, null, null, true);
     }
 
     /**
      * ArtistDTO constructor.
-     * @param mixed $params
+     * @param $id
+     * @param $amgArtistId
+     * @param $name
      * @param bool $error
      */
-    private function __construct($params, $error = false)
+    private function __construct($id, $amgArtistId, $name, $error = false)
     {
         $this->error = $error;
 
-
         if (!$error) {
-            $this->id = $params['id'];
-            $this->amgArtistId = $params['amgArtistId'];
-            $this->name = $params['name'];
+            $this->id = $id;
+            $this->amgArtistId = $amgArtistId;
+            $this->name = $name;
         }
     }
 
     /**
-     * @param Top $top
+     * @param TopDTO $top
      */
-    public function setTop(Top $top)
+    public function setTop(TopDTO $top)
     {
         $this->top = $top;
     }
@@ -107,7 +105,7 @@ class ArtistDTO
     }
 
     /**
-     * @return Top
+     * @return TopDTO
      */
     public function getTop()
     {

@@ -2,7 +2,7 @@
 
 namespace App;
 
-class Top
+class TopDTO
 {
     private $top;
 
@@ -14,7 +14,7 @@ class Top
 
         if ($resultCount) {
             for ($i = 1; $i < $resultCount; ++$i) {
-                $song = ITunesSong::getInstance($dataJsone->results[$i]);
+                $song = ITunesSongDTO::getInstance($dataJsone->results[$i]);
 
                 if ($song) {
                     $listOfSongs[] = $song;

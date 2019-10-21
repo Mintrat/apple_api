@@ -2,14 +2,14 @@
 
 namespace App;
 
-class ITunesSong
+class ITunesSongDTO
 {
     private $id;
     private $title;
 
     /**
      * @param $song
-     * @return ITunesSong
+     * @return ITunesSongDTO
      */
     public static function getInstance($song)
     {
@@ -17,7 +17,7 @@ class ITunesSong
     }
 
     /**
-     * ITunesSong constructor.
+     * ITunesSongDTO constructor.
      * @param int $id
      * @param string $title
      */

@@ -1,12 +1,12 @@
 <?php
 require './vendor/autoload.php';
 
-use App\ITunesTop;
+use App\ITunesService;
 use App\ArtistDTO;
 use App\AppleMusicSongDTO;
-use App\Top;
-use App\ITunesSong;
+use App\TopDTO;
+use App\ITunesSongDTO;
 use GuzzleHttp\Client;
 
-$itunes = new ITunesTop(new GuzzleHttp\Client());
+$itunes = new ITunesService(new GuzzleHttp\Client());
 $artist = $itunes->getArtistById(6671250);

@@ -17,41 +17,35 @@ class AppleMusicSongDTO
     public static function getInstance(String $data)
     {
         if ($data) {
-            $params = static::parseData($data);
-            return $params ? new static($params) : static::getInstanceError();
+            $song = static::parseData($data);
         }
 
-        return static::getInstanceError();
+        if (!$song) {
+            $song = static::getInstanceError();
+        }
+
+        return $song;
     }
 
     /**
      * @param String $data
-     * @return array|boolean parameters for create object or false
+     * @return AppleMusicSongDTO|boolean parameters for create object or false
      */
     private static function parseData(String $data)
     {
-        $error = false;
         $dataJsone = json_decode($data);
 
         if ($dataJsone && $dataJsone->data[0]) {
-            $params = [];
 
-            $params['title'] = $dataJsone->data[0]->attributes->name;
-            $params['id'] = $dataJsone->data[0]->id;
-            $params['artistsIds'] = [];
+            $id = $dataJsone->data[0]->id;
+            $title = $dataJsone->data[0]->attributes->name;
+            $artistsIds = [];
 
             foreach ($dataJsone->data[0]->relationships->artists->data as $artist) {
-                $params['artistsIds'][] = (int)$artist->id;
+                $artistsIds[] = (int)$artist->id;
             }
 
-            foreach ($params as $param) {
-                if (!$param) {
-                    $error = true;
-                    break;
-                }
-            }
-
-            return $error ? false : $params;
+            return new static($id, $title, $artistsIds);
 
         } else {
             return false;
@@ -63,21 +57,23 @@ class AppleMusicSongDTO
      */
     public static function getInstanceError()
     {
-        return new static('', true);
+        return new static(null, null, null, true);
     }
 
     /**
      * AppleMusicSongDTO constructor.
-     * @param $params
+     * @param $id
+     * @param $title
+     * @param $artistsIds
      * @param bool $error
      */
-    private function __construct($params, $error = false)
+    private function __construct($id, $title, $artistsIds, $error = false)
     {
         $this->error = $error;
         if (!$error) {
-            $this->title = $params['title'];
-            $this->id = $params['id'];
-            $this->artistsIds = $params['artistsIds'];
+            $this->id = $id;
+            $this->title = $title;
+            $this->artistsIds = $artistsIds;
         }
     }
 
